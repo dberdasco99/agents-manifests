@@ -1,0 +1,57 @@
+apiVersion: actions.summerwind.dev/v1alpha1
+kind: RunnerDeployment
+metadata:
+  name: shared-runner
+  namespace: actions-runner-system
+spec:
+  replicas: 1
+  template:
+    spec:
+      # Importante: usar organization en lugar de repository
+      organization: dberdasco99
+      dockerdWithinRunnerContainer: false
+      containers:
+        - name: runner
+          image: summerwind/actions-runner:latest
+          env:
+            - name: RUNNER_FEATURE_FLAG_EPHEMERAL
+              value: "true"   # ephemeral: pod se destruye al terminar job
+            - name: DOCKER_HOST
+              value: unix:///var/run/docker.sock
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              echo "Esperando a que Docker esté disponible..."
+              for i in {1..20}; do
+                if [ -S /var/run/docker.sock ]; then break; fi
+                echo "Esperando Docker... intento $i"
+                sleep 3
+              done
+              /home/runner/run.sh
+          volumeMounts:
+            - name: docker-graph-storage
+              mountPath: /var/lib/docker
+            - name: docker-socket
+              mountPath: /var/run
+        - name: dind
+          image: docker:27-dind
+          securityContext:
+            privileged: true
+          env:
+            - name: DOCKER_TLS_CERTDIR
+              value: ""  # Desactiva TLS
+          volumeMounts:
+            - name: docker-graph-storage
+              mountPath: /var/lib/docker
+            - name: docker-socket
+              mountPath: /var/run
+      volumes:
+        - name: docker-graph-storage
+          emptyDir: {}
+        - name: docker-socket
+          emptyDir: {}
+      labels:
+        - self-hosted
+        - linux
+        - x64
+        - shared
