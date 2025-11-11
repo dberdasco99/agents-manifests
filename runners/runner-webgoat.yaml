@@ -8,5 +8,10 @@ spec:
   template:
     spec:
       repository: dberdasco99/webgoat-app
+      ephemeral: true
       labels:
+        - self-hosted
+        - linux
+        - x64
         - webgoat
+
