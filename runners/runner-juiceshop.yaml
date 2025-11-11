@@ -8,5 +8,9 @@ spec:
   template:
     spec:
       repository: dberdasco99/juiceshop-app
+      ephemeral: true
       labels:
+        - self-hosted
+        - linux
+        - x64
         - juiceshop
